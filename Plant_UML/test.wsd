@@ -1,0 +1,24 @@
+@startuml
+actor Customer as customer #yellow
+control Monitor as monitor
+participant ProxyAddress as proxyAddress
+participant System as system
+participant Vault as vault
+database Database  #Green
+participant TargetAddress as targetAddress
+
+autonumber
+customer -[#red]> proxyAddress : 入金
+monitor -[#red]> proxyAddress : 檢查出入金
+monitor -[#red]> system :告知可否\n出金到金庫
+system -[#red]> vault : 出金\n到金庫
+vault -[#red]> Database : 記錄到DB
+system --[#0000FF]> customer : 通知Customer成功入金
+
+customer -[#red]> system : 申請出金
+system -[#red]> Database : 檢查\n金庫餘額
+system -[#red]> vault : 發起出金
+vault -[#red]> targetAddress : 發起出金
+vault -[#red]> Database : 記錄到DB
+system --[#0000FF]> customer : 通知Customer成功出金
+@enduml
