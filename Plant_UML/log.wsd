@@ -1,0 +1,16 @@
+@startuml
+start
+:Node;
+:取得transaction;
+:使用web3套件取得
+transaction的topic[0];
+if (查詢mongoDB有沒有這個method?) then (yes)
+  :get method;
+end
+else (no)
+  :使用txn到etherscan查詢;
+  :使用爬蟲html爬下來再剖析取得method與topic[0];
+  :存入mongoDB;
+  :get method;
+end
+@enduml
