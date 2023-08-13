@@ -2,6 +2,7 @@ from web3 import Web3
 import requests
 from bs4 import BeautifulSoup
 import csv
+import os
 # 將十六進制字串轉換為十進制整數
 # def get_event_signature_hash(event_description):
 #     # 创建 web3 实例
@@ -18,7 +19,12 @@ import csv
 
 # 到etherscan指定要爬取的transacion log
 network = "ethereum"
-transaction_hash = '0x50648fa5a012b31e7ec32f974e4f464ac40d4ec6ee9b3291138635907f01b980'
+# 0x0a9d888ed9be6a12f2be10116de012061652f6bdc50e3c4614be4c1d8a51d1b3、
+# 0x50648fa5a012b31e7ec32f974e4f464ac40d4ec6ee9b3291138635907f01b980、
+# 0xece6b5bc85a12cab6f03ff8dd1f704187c56a3f6b2eaea9fbb7b88aadf3c7892、
+# 0xa1794148e61713c6ecc2f8f5913d4b41f24eec243826820255252e2a6cdb3091、
+# 0x1393dd521671cbad5c3e8283b9e1a9442f817697ccf95854aa53c1bad29b16f4
+transaction_hash = '0x1393dd521671cbad5c3e8283b9e1a9442f817697ccf95854aa53c1bad29b16f4'
 url = f"https://etherscan.io/tx/{transaction_hash}#eventlog"
 
 # 发起HTTP GET请求
@@ -73,13 +79,39 @@ if response.status_code == 200:
 
     # 指定要写入的CSV文件名
     csv_filename = "method_topic.csv"
-    # 将数据写入CSV文件，可以重複寫入
+
+    # 如果CSV文件不存在，则创建并写入表头
+    if not os.path.exists(csv_filename):
+        with open(csv_filename, mode="w", newline="", encoding="utf-8") as csv_file:
+            fieldnames = ["network", "method", "topic"]
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+
+    # 读取已存在的数据
+    existing_methods = set()
+    if os.path.exists(csv_filename):
+        with open(csv_filename, mode="r", newline="", encoding="utf-8") as csv_file:
+            reader = csv.DictReader(csv_file)
+            for row in reader:
+                existing_methods.add(row["topic"])
+
+    # 将新数据写入CSV文件，仅写入不存在的数据
     with open(csv_filename, mode="a", newline="", encoding="utf-8") as csv_file:
-        fieldnames = ["network","method", "topic"]
+        fieldnames = ["network", "method", "topic"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        # writer.writeheader()
         for key, value in method_topic.items():
-            writer.writerow({"network":network,"method": key, "topic": value}) 
-    print(f"Data written to {csv_filename} successfully.")
+            if key not in existing_methods:
+                writer.writerow({"network": network, "method": value, "topic": key})
+                existing_methods.add(key)
+
+
+    # # 将数据写入CSV文件，可以重複寫入
+    # with open(csv_filename, mode="a", newline="", encoding="utf-8") as csv_file:
+    #     fieldnames = ["network","method", "topic"]
+    #     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    #     # writer.writeheader()
+    #     for key, value in method_topic.items():
+    #         writer.writerow({"network":network,"method": key, "topic": value}) 
+    # print(f"Data written to {csv_filename} successfully.")
 else:
     print("Failed to retrieve the page.")
